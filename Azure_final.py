@@ -237,7 +237,7 @@ if file_upload:
 
     if 'edit_mode' not in st.session_state:
         st.session_state.edit_mode = False
-
+    else:        st.session_state.edit_mode = False
     # # Process OCR lines if not already processed
     # if st.button("Extract Information"):
 
