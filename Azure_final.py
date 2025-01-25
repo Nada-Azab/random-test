@@ -273,7 +273,7 @@ if file_upload:
                 st.session_state.edit_mode = False
 
     # Display information
-    if st.session_state.edit_mode == False or flag_save :
+    else:
         st.subheader("Final Information")
         for key, value in st.session_state.extracted_info.items():
             st.write(f"{key.replace('_', ' ').title()}: {value}")
