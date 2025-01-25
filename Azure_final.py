@@ -267,7 +267,7 @@ if file_upload:
             if save_btn:
                 st.success("Information updated successfully!")
                 st.session_state.edit_mode = False
-                flag_save=True
+                # flag_save=True
         with col2:
             if st.button("Cancel"):
                 st.session_state.edit_mode = False
@@ -277,5 +277,5 @@ if file_upload:
         st.subheader("Final Information")
         for key, value in st.session_state.extracted_info.items():
             st.write(f"{key.replace('_', ' ').title()}: {value}")
-            st.session_state.edit_mode = True
+            # st.session_state.edit_mode = True
             # flag_mode = True
