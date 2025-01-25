@@ -1,6 +1,5 @@
 from azure.ai.formrecognizer import FormRecognizerClient , DocumentAnalysisClient
 from azure.core.credentials import AzureKeyCredential
-import cv2
 import numpy as np
 import re
 import streamlit as st
