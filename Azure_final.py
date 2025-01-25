@@ -234,10 +234,10 @@ if file_upload:
     layout_result = poller.result()
     flag_save = False
 
-    flag_mode=False
+    # flag_mode=False
     if 'edit_mode' not in st.session_state:
         st.session_state.edit_mode = False
-    elif flag_mode:        st.session_state.edit_mode = False
+    # elif flag_mode:        st.session_state.edit_mode = False
 
     # # Process OCR lines if not already processed
     # if st.button("Extract Information"):
@@ -278,4 +278,4 @@ if file_upload:
         for key, value in st.session_state.extracted_info.items():
             st.write(f"{key.replace('_', ' ').title()}: {value}")
             st.session_state.edit_mode = True
-            flag_mode = True
+            # flag_mode = True
