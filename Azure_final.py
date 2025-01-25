@@ -2,12 +2,14 @@ from azure.ai.formrecognizer import FormRecognizerClient , DocumentAnalysisClien
 from azure.core.credentials import AzureKeyCredential
 import cv2
 import numpy as np
+import re
 import streamlit as st
 
 
-# Replace with your Form Recognizer endpoint and API key
-endpoint = "https://textextraction01.cognitiveservices.azure.com/"
-api_key = "9xK9bARgn3Ox6OYYwSVLkwOFRxNUrHBPeoox0YR9PBOQ57NMfhWxJQQJ99BAACrIdLPXJ3w3AAALACOGpDfI"
+# Access secrets
+endpoint = st.secrets["api_credentials"]["endpoint"]
+api_key = st.secrets["api_credentials"]["api_key"]
+
 
 # pass images with :
 # flash : snaa
@@ -72,7 +74,6 @@ def has_arabic_with_diacritics(text):
 #     result = has_arabic_with_diacritics(text)
 #     print(f"Text: {text}")
 #     print(f"Has Arabic with diacritics: {result}\n")
-import re
 
 
 def check_text_type_with_len(text):
