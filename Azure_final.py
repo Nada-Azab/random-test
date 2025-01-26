@@ -413,7 +413,7 @@ if st.button("Submit") and file_upload:
 
 
     except cx_Oracle.DatabaseError as e:
-        print(f"Database error: {e}")
+        st.write(f"Database error: {e}")
 
     finally:
         # Close the cursor and connection
