@@ -217,7 +217,7 @@ def process_ocr_lines(layout_result):
 if file_upload:
     img = file_upload
     st.image(file_upload)
-
+    edited_info = {}
     # Reset session state when a new image is uploaded
     st.session_state.extracted_info = {
         'id': None,
@@ -249,7 +249,7 @@ if file_upload:
         st.subheader("Edit Extracted Details")
 
         # Use session state for edited info to persist across reruns
-        edited_info = {}
+
         for key in st.session_state.extracted_info.keys():
             edited_info[key] = st.text_input(
                 f"Edit {key.replace('_', ' ').title()}",
