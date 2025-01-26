@@ -217,7 +217,7 @@ def process_ocr_lines(layout_result):
 if file_upload:
     img = file_upload
     st.image(file_upload)
-    edited_info = {}
+
     # Reset session state when a new image is uploaded
     st.session_state.extracted_info = {
         'id': None,
@@ -243,13 +243,14 @@ if file_upload:
     edit_btn = st.button("Edit")
     if edit_btn:
         st.session_state.edit_mode = True
-
+    # Use st.empty() to create a placeholder for the input field
+    input_placeholder = st.empty()
     # Display or Edit mode
     if st.session_state.edit_mode:
         st.subheader("Edit Extracted Details")
 
         # Use session state for edited info to persist across reruns
-
+        edited_info = {}
         for key in st.session_state.extracted_info.keys():
             edited_info[key] = st.text_input(
                 f"Edit {key.replace('_', ' ').title()}",
@@ -273,6 +274,7 @@ if file_upload:
 
     # Display final information
     if not st.session_state.edit_mode:
+        input_placeholder.empty()  # Remove the input field
         st.subheader("Final Information")
         for key, value in st.session_state.extracted_info.items():
             st.write(f"{key.replace('_', ' ').title()}: {value}")
