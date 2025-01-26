@@ -388,7 +388,7 @@ if st.button("Submit") and file_upload:
         # cursor.execute(create_sequence_query)
 
         # Print out all variables before insertion
-        print(f"Inserting data: {id}, {name}, {address}, {birthday}, {current_time}, {mime_type}, {current_date}")
+        st.write(f"Inserting data: {id}, {name}, {address}, {birthday}, {current_time}, {mime_type}, {current_date}")
 
         # Explicitly handle potential None values
         data = (
