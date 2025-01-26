@@ -219,15 +219,14 @@ if file_upload:
     st.image(file_upload)
 
     # Reset session state when a new image is uploaded
-    if 'extracted_info' not in st.session_state:
-        st.session_state.extracted_info = {
-            'id': None,
-            'factory_num': None,
-            'first_name': None,
-            'second_name': None,
-            'address': None,
-            'address2': None
-        }
+    st.session_state.extracted_info = {
+        'id': None,
+        'factory_num': None,
+        'first_name': None,
+        'second_name': None,
+        'address': None,
+        'address2': None
+    }
 
     # Analyze the document using the layout model
     poller = document_analysis_client.begin_analyze_document("prebuilt-layout", img)
