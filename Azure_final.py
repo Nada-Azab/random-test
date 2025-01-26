@@ -392,7 +392,7 @@ if st.button("Submit") and file_upload:
         data = (
              id, name, address, birthday, current_time, img_bytes, mime_type, current_date, " ", type
         )
-
+        st.write(data)
         # Execute the query
         cursor.execute(sql_stat, data)
         # Execute the query
