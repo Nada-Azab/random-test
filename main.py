@@ -250,7 +250,7 @@ def process_ocr_lines(layout_result):
 type = ["list", "OTM-PROJECT"]
 
 # Display the list in a select box
-selected_item = st.selectbox("Choose a fruit:", type)
+selected_item = st.selectbox("Choose type:", type)
 if selected_item:
     # Display the selected item
     print(f"You selected: {selected_item}")
@@ -376,23 +376,33 @@ if st.button("Submit") and file_upload:
             extracted_id_seq.NEXTVAL,:1, :2, :3, :4, :5, :6, :7, :8, :9, :10
         )
         """
-        # SQL statement to create a sequence
-        create_sequence_query = """
-        CREATE SEQUENCE extracted_id_seq
-          START WITH 1
-          INCREMENT BY 1
-          NOCACHE
-        """
+        # # SQL statement to create a sequence
+        # create_sequence_query = """
+        # CREATE SEQUENCE extracted_id_seq
+        #   START WITH 1
+        #   INCREMENT BY 1
+        #   NOCACHE
+        # """
+        #
+        # # Execute the query
+        # cursor.execute(create_sequence_query)
 
-        # Execute the query
-        cursor.execute(create_sequence_query)
+        # Print out all variables before insertion
+        st.write(f"Inserting data: {id}, {name}, {address}, {birthday}, {current_time}, {mime_type}, {current_date}")
 
-
-        # Data to insert
+        # Explicitly handle potential None values
         data = (
-             id, name, address, birthday, current_time, img_bytes, mime_type, current_date, " ", type
+            st.session_state.extracted_info['id'] or '',  # Provide default if None
+            name or '',
+            address or '',
+            datetime.strptime(birthday, "%Y-%m-%d"),
+            current_time,
+            img_bytes,
+            mime_type,
+            current_date,
+            " ",
+            selected_item
         )
-
         # Execute the query
         cursor.execute(sql_stat, data)
         # Execute the query
@@ -403,7 +413,7 @@ if st.button("Submit") and file_upload:
 
 
     except cx_Oracle.DatabaseError as e:
-        print(f"Database error: {e}")
+        st.write(f"Database error: {e}")
 
     finally:
         # Close the cursor and connection
