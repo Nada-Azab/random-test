@@ -329,11 +329,11 @@ if file_upload:
 else:st.write("Please upload an image file")
 # -------------------database
 
-dsn = cx_Oracle.makedsn(
-    host=st.secrets["api_credentials"]['host'],
-    port=st.secrets["api_credentials"]['port'],
-    service_name=st.secrets["api_credentials"]['sn']  # Replace with your service name
-)
+# dsn = cx_Oracle.makedsn(
+#     host=st.secrets["api_credentials"]['host'],
+#     port=st.secrets["api_credentials"]['port'],
+#     service_name=st.secrets["api_credentials"]['sn']  # Replace with your service name
+# )
 
 
 if st.button("Submit") and file_upload:
