@@ -215,36 +215,33 @@ def process_ocr_lines(layout_result):
 #     img=picture
 #     st.image(picture)
 if file_upload:
-    img= file_upload
+    img = file_upload
     st.image(file_upload)
-    # Analyze the document using the layout model
-    # with open(file_upload, "rb") as id_image_file:
-    # Reset session state when new image is uploaded
-    st.session_state.extracted_info = {
-        'id': None,
-        'factory_num': None,
-        'first_name': None,
-        'second_name': None,
-        'address': None,
-        'address2': None
-    }
 
-    # st.session_state.edit_mode = False
+    # Reset session state when a new image is uploaded
+    if 'extracted_info' not in st.session_state:
+        st.session_state.extracted_info = {
+            'id': None,
+            'factory_num': None,
+            'first_name': None,
+            'second_name': None,
+            'address': None,
+            'address2': None
+        }
+
+    # Analyze the document using the layout model
     poller = document_analysis_client.begin_analyze_document("prebuilt-layout", img)
     layout_result = poller.result()
-    flag_save = False
 
-    # flag_mode=False
+    # Process OCR lines to extract information
+    process_ocr_lines(layout_result)
+
+    # Initialize edit mode if not already set
     if 'edit_mode' not in st.session_state:
         st.session_state.edit_mode = False
-    # elif flag_mode:        st.session_state.edit_mode = False
 
-    # # Process OCR lines if not already processed
-    # if st.button("Extract Information"):
-
-    process_ocr_lines(layout_result)
-    edit_btn=st.button("Edit")
     # Edit mode toggle
+    edit_btn = st.button("Edit")
     if edit_btn:
         st.session_state.edit_mode = True
 
@@ -253,29 +250,30 @@ if file_upload:
         st.subheader("Edit Extracted Details")
 
         # Use session state for edited info to persist across reruns
+        edited_info = {}
         for key in st.session_state.extracted_info.keys():
-            st.session_state.extracted_info[key] = st.text_input(
+            edited_info[key] = st.text_input(
                 f"Edit {key.replace('_', ' ').title()}",
                 value=st.session_state.extracted_info[key] or ""
             )
 
-        # Save and Cancel columns
+        # Save and Cancel buttons
         col1, col2 = st.columns([6, 1])
 
         with col1:
-            save_btn=st.button("Save Changes")
+            save_btn = st.button("Save Changes")
             if save_btn:
+                # Update the session state with the edited info
+                st.session_state.extracted_info = edited_info
                 st.success("Information updated successfully!")
                 st.session_state.edit_mode = False
-                # flag_save=True
+
         with col2:
             if st.button("Cancel"):
                 st.session_state.edit_mode = False
 
-    # Display information
-    else:
+    # Display final information
+    if not st.session_state.edit_mode:
         st.subheader("Final Information")
         for key, value in st.session_state.extracted_info.items():
             st.write(f"{key.replace('_', ' ').title()}: {value}")
-            # st.session_state.edit_mode = True
-            # flag_mode = True
