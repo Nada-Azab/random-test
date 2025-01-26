@@ -14,6 +14,9 @@ api_key = st.secrets["api_credentials"]["api_key"]
 
 document_analysis_client = DocumentAnalysisClient(endpoint=endpoint, credential=AzureKeyCredential(api_key))
 
+# Explicitly set Oracle client path
+os.environ['LD_LIBRARY_PATH'] = '/home/adminuser/instantclient/instantclient_21_10'
+cx_Oracle.init_oracle_client()
 
 # helpers
 
