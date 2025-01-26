@@ -6,7 +6,9 @@ from azure.core.credentials import AzureKeyCredential
 import numpy as np
 import re
 import streamlit as st
-
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
+import urllib.parse
 
 # Access secrets
 endpoint = st.secrets["api_credentials"]["endpoint"]
@@ -339,84 +341,72 @@ dsn = cx_Oracle.makedsn(
 
 if st.button("Submit") and file_upload:
     try:
-        # Establish the connection
-        connection = cx_Oracle.connect(
-            user=st.secrets["api_credentials"]['user'],
-            password=st.secrets["api_credentials"]['pass'],
-            dsn=dsn
-        )
+        # Create connection string
+        username = st.secrets["api_credentials"]['user']
+        password = urllib.parse.quote_plus(st.secrets["api_credentials"]['pass'])
+        host = st.secrets["api_credentials"]['host']
+        port = st.secrets["api_credentials"]['port']
+        service_name = st.secrets["api_credentials"]['sn']
 
-        print("Connected successfully!")
+        connection_string = f"oracle+cx_oracle://{username}:{password}@{host}:{port}/{service_name}"
+        
+        # Create SQLAlchemy engine
+        engine = create_engine(connection_string)
 
-        # Create a cursor object
-        cursor = connection.cursor()
-
-        # SQL query to create the table
+        # SQL query to create the table (if not exists)
         create_table_query = """
-        CREATE TABLE Extracted_ID (
+        CREATE TABLE IF NOT EXISTS Extracted_ID (
             id NUMBER PRIMARY KEY,
             name VARCHAR2(100),
             address VARCHAR2(200),
             date_column DATE,
             stamp TIMESTAMP,
             img BLOB,
-            mime_type VARCHAR2(100),        -- MIME type of the image (e.g., "image/jpeg")
-            last_update_img DATE,           -- Last update date of the record
+            mime_type VARCHAR2(100),
+            last_update_img DATE,
             created_by VARCHAR2(50),
-            type VARCHAR2(50)
+            type VARCHAR2(50),
+            P_id NUMBER
         )
         """
-        sql_stat_old="""ALTER TABLE Extracted_ID
-        ADD P_id number"""
-
 
         # SQL statement to insert data
         sql_stat = """
         INSERT INTO Extracted_ID (
-            id,P_id,name, address, date_column, stamp, img, mime_type, last_update_img, created_by, type
-        )
-        VALUES (
-            extracted_id_seq.NEXTVAL,:1, :2, :3, :4, :5, :6, :7, :8, :9, :10
+            id, P_id, name, address, date_column, stamp, 
+            img, mime_type, last_update_img, created_by, type
+        ) VALUES (
+            extracted_id_seq.NEXTVAL, :p_id, :name, :address, :date_column, :stamp, 
+            :img, :mime_type, :last_update_img, :created_by, :type
         )
         """
-        # # SQL statement to create a sequence
-        # create_sequence_query = """
-        # CREATE SEQUENCE extracted_id_seq
-        #   START WITH 1
-        #   INCREMENT BY 1
-        #   NOCACHE
-        # """
-        #
-        # # Execute the query
-        # cursor.execute(create_sequence_query)
 
-        # Print out all variables before insertion
-        st.write(f"Inserting data: {id}, {name}, {address}, {birthday}, {current_time}, {mime_type}, {current_date}")
+        # Prepare data for insertion
+        data = {
+            'p_id': st.session_state.extracted_info['id'] or '',
+            'name': name or '',
+            'address': address or '',
+            'date_column': datetime.strptime(birthday, "%Y-%m-%d"),
+            'stamp': current_time,
+            'img': img_bytes,
+            'mime_type': mime_type,
+            'last_update_img': current_date,
+            'created_by': ' ',
+            'type': selected_item
+        }
 
-        # Explicitly handle potential None values
-        data = (
-            st.session_state.extracted_info['id'] or '',  # Provide default if None
-            name or '',
-            address or '',
-            datetime.strptime(birthday, "%Y-%m-%d"),
-            current_time,
-            img_bytes,
-            mime_type,
-            current_date,
-            " ",
-            selected_item
-        )
-        # Execute the query
-        cursor.execute(sql_stat, data)
-        # Execute the query
-        # cursor.execute(sql_stat)
+        # Execute queries
+        with engine.connect() as connection:
+            # Optionally create table
+            connection.execute(text(create_table_query))
+            
+            # Insert data
+            connection.execute(text(sql_stat), data)
+            
+            st.success("Data inserted successfully!")
 
-        # Commit the transaction
-        connection.commit()
-
-
-    except cx_Oracle.DatabaseError as e:
-        st.write(f"Database error: {e}")
+    except SQLAlchemyError as e:
+        st.error(f"Database error: {e}")
 
     finally:
         # Close the cursor and connection
