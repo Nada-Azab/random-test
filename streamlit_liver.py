@@ -95,8 +95,7 @@ def inject_custom_css():
 # ==========================
 @st.cache_resource
 def load_model():
-    return tf.keras.models.load_model("/content/Dense_model.path/kaggle/working/Dense_model_.h5")
-
+    return tf.keras.models.load_model("Dense_model_.h5")
 # ==========================
 # PREPROCESS IMAGE
 # ==========================
