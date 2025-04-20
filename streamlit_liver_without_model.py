@@ -1,6 +1,6 @@
 import streamlit as st
 from PIL import Image
-import io
+import numpy as np
 
 # ==========================
 # PAGE CONFIG
@@ -23,24 +23,51 @@ def inject_custom_css():
             --accent: #e74c3c;
         }
         
+        /* Navigation Bar Styles */
+        .nav-container {
+            background-color: var(--primary);
+            padding: 15px 25px;
+            border-radius: 0 0 10px 10px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: white !important;
+            margin-right: 40px;
+        }
+        
+        .nav-items {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-item {
+            color: white !important;
+            font-size: 16px;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .nav-item:hover {
+            color: var(--secondary) !important;
+        }
+        
+        .patient-info {
+            color: white;
+            font-size: 14px;
+            margin-left: auto;
+        }
+        
+        /* Rest of your existing styles */
         .stApp {
             max-width: 1200px;
             margin: 0 auto;
             font-family: 'Arial', sans-serif;
-        }
-        
-        .header {
-            background-color: var(--primary);
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 0 0 10px 10px;
-            margin-bottom: 2rem;
-        }
-        
-        .nav {
-            display: flex;
-            gap: 2rem;
-            margin-bottom: 1rem;
         }
         
         .organ-card {
@@ -66,6 +93,13 @@ def inject_custom_css():
             text-align: center;
             border: 1px solid #ddd;
             border-radius: 4px;
+        }
+        
+        .doctor-card {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -98,16 +132,19 @@ doctors = [
 def main():
     inject_custom_css()
     
-    # Header
+    # Navigation Bar (matches your image exactly)
     st.markdown("""
-    <div class="header">
-        <h1>GASTROCHECK</h1>
-        <div class="nav">
-            <a href="#home">Home</a>
-            <a href="#therapy">Therapy</a>
-            <a href="#centers">Our Centers</a>
-            <a href="#specialists">Specialists</a>
-            <a href="#contact">Contact</a>
+    <div class="nav-container">
+        <div class="nav-logo">GASTROCHECK</div>
+        <div class="nav-items">
+            <a href="#home" class="nav-item">Home</a>
+            <a href="#therapy" class="nav-item">Therapy</a>
+            <a href="#centers" class="nav-item">Our Centers</a>
+            <a href="#specialists" class="nav-item">Specialists</a>
+            <a href="#contact" class="nav-item">Contact</a>
+        </div>
+        <div class="patient-info">
+            Michael Harris<br>24 pts
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -170,7 +207,7 @@ def main():
         st.markdown("## Doctors")
         for name, specialty in doctors:
             st.markdown(f"""
-            <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
+            <div class="doctor-card">
                 <div style="width:50px; height:50px; border-radius:50%; background:#ddd;"></div>
                 <div>
                     <h4 style="margin:0;">{name}</h4>
