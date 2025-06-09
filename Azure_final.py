@@ -1,4 +1,4 @@
-import cx_Oracle
+import oracledb
 import mimetypes
 from datetime import datetime,date
 from azure.ai.formrecognizer import FormRecognizerClient , DocumentAnalysisClient
@@ -8,11 +8,6 @@ import re
 import streamlit as st
 
 
-# Access secrets
-endpoint = st.secrets["api_credentials"]["endpoint"]
-api_key = st.secrets["api_credentials"]["api_key"]
-
-document_analysis_client = DocumentAnalysisClient(endpoint=endpoint, credential=AzureKeyCredential(api_key))
 
 
 # helpers
@@ -149,39 +144,68 @@ def get_mime_type(file_name):
     mime_type, _ = mimetypes.guess_type(file_name)
     return mime_type or "application/octet-stream"  # Default MIME type if unknown
 
+def arabic_to_english_numerals(arabic_str):
+    """Convert Arabic/Persian numerals to English numerals while maintaining original grouping."""
+    numeral_map = {
+        '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
+        '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9'
+    }
+
+    print("arabic_str", arabic_str)
+
+    # Split the string by spaces to maintain groups
+    groups = arabic_str.split()
+
+    # Convert each group to English numerals
+    english_groups = []
+    for group in groups:
+        english_group = ''
+        for char in group[::-1]:
+            english_group += numeral_map.get(char, char)
+        english_groups.append(english_group)
+
+    print("english_chars", english_groups)
+
+    # Join all digits for final processing
+    english_str = ''.join(english_groups)
+    return english_str[::-1]
 def extract_birthday(id_number):
-
-    # # Validate ID number length
-    # if len(id_number) < 14:
-    #     return "Invalid ID number: Too short"
-
+    """Extract birthday from ID number, supporting both English and Arabic numerals."""
     try:
-        # Extract year with precise century determination
-        year_digits = id_number[1:3]
-        month_digits = id_number[3:5]
-        day_digits = id_number[5:7]
+        # Convert Arabic numerals to English if necessary
+        cleaned_id = arabic_to_english_numerals(id_number)
+        print(cleaned_id)
+        # Remove any remaining non-numeric characters
+        cleaned_id = ''.join(filter(str.isdigit, cleaned_id))
 
-        # Validate month and day
+        # Validate ID number length
+        # if len(cleaned_id) < 14:
+        #     return "Invalid ID number: Too short"
+
+        # Extract year, month, and day
+        year_digits = cleaned_id[1:3]
+        month_digits = cleaned_id[3:5]
+        day_digits = cleaned_id[5:7]
+
+        # Convert to integers
+        year = int(year_digits)
         month = min(max(int(month_digits), 1), 12)
         day = min(max(int(day_digits), 1), 31)
 
-        # Century logic
+        # Determine century
         current_year = datetime.now().year
-        year = int(year_digits)
-
-        # Determine full year with more precise logic
         if year > 40:  # Assume 1900-1950 range
             full_year = 1900 + year
         else:  # Assume 2000-2050 range
             full_year = 2000 + year
 
-        # Construct date with error handling
+        # Construct date
         birthday = datetime(full_year, month, day)
-
         return birthday.strftime("%Y-%m-%d")
 
-    except ValueError:
+    except Exception as e:
         return "2000-01-01"
+
 
 
 # ----------------- Api use
@@ -193,9 +217,9 @@ file_path = r"C:\Users\dell\Downloads\test06.jpg"
 # enable = st.checkbox("Open Camera")
 # picture = st.camera_input("Take a picture", disabled=not enable)
 # flag_camera= False
-st.title('Egyptian ID Card Data Extractor')
-st.write('Upload an Egyptian ID card image to extract information')
-file_upload = st.file_uploader("Upload the Picture" , type=["jpg", "jpeg", "png", "gif"])
+st.title('استخراج البيانات من البطاقات المصريه')
+st.write('من فضلك ارفع صوره بطاقه الرقم القومى لاخذ المعلومات')
+file_upload = st.file_uploader("ارفع الصوره" , type=["jpg", "jpeg", "png", "gif"])
 flag_upload = False
 
 extracted_info = {
@@ -258,151 +282,160 @@ else:st.write("Please Select type")
 # Initialize edit_mode in session state if not already exists
 if 'edit_mode' not in st.session_state:
     st.session_state.edit_mode = False
+try :
+    if file_upload:
 
-if file_upload:
-    img = file_upload
-    st.image(file_upload)
-    mime_type = get_mime_type(file_upload.name)
-    # Get the current date and time for last update
-    last_update_date = datetime.now()
-    # Read the uploaded file in binary mode
-    img_bytes =file_upload.getvalue()
-    print("mime_type",mime_type,"\nlast_update_date",last_update_date)
-    # Reset session state when a new image is uploaded
-    st.session_state.extracted_info = {
-        'id': None,
-        'factory_num': None,
-        'first_name': None,
-        'second_name': None,
-        'address': None,
-        'address2': None
-    }
+        # Access secrets
+        endpoint = st.secrets["api_credentials"]["endpoint"]
+        api_key = st.secrets["api_credentials"]["api_key"]
 
-    # Analyze the document
-    poller = document_analysis_client.begin_analyze_document("prebuilt-layout", img)
-    layout_result = poller.result()
+        document_analysis_client = DocumentAnalysisClient(endpoint=endpoint, credential=AzureKeyCredential(api_key))
 
-    # Process OCR lines
-    process_ocr_lines(layout_result)
+        img = file_upload
+        st.image(file_upload)
+        mime_type = get_mime_type(file_upload.name)
+        # Get the current date and time for last update
+        last_update_date = datetime.now()
+        # Read the uploaded file in binary mode
+        img_bytes =file_upload.getvalue()
+        print("mime_type",mime_type,"\nlast_update_date",last_update_date)
+        # Reset session state when a new image is uploaded
+        st.session_state.extracted_info = {
+            'id': None,
+            'factory_num': None,
+            'first_name': None,
+            'second_name': None,
+            'address': None,
+            'address2': None
+        }
 
-    # Always show extracted data initially
-    st.subheader("Extracted Information")
-    for key, value in st.session_state.extracted_info.items():
-        st.write(f"{key.replace('_', ' ').title()}: {value}")
+        # Analyze the document
+        poller = document_analysis_client.begin_analyze_document("prebuilt-document", img)
+        layout_result = poller.result()
 
-    # Edit button
-    if st.button("Edit"):
-        st.session_state.edit_mode = True
+        # Process OCR lines
+        process_ocr_lines(layout_result)
 
-    # Edit mode
-    if st.session_state.edit_mode:
-        st.subheader("Edit Extracted Details")
+        # Always show extracted data initially
+        st.subheader("Extracted Information")
+        for key, value in st.session_state.extracted_info.items():
+            st.write(f"{key.replace('_', ' ').title()}: {value}")
 
-        # Edit inputs persist and update session state directly
-        for key in st.session_state.extracted_info.keys():
-            st.session_state.extracted_info[key] = st.text_input(
-                f"Edit {key.replace('_', ' ').title()}",
-                value=st.session_state.extracted_info[key] or ""
-            )
+        # Edit button
+        if st.button("Edit"):
+            st.session_state.edit_mode = True
 
-        # Save button
-        if st.button("Save Changes"):
-            st.success("Information updated successfully!")
-            for key, value in st.session_state.extracted_info.items():
-                print(f"{key.replace('_', ' ').title()}: {value}")
-        # Cancel button
-        if st.button("Cancel"):
-            st.session_state.edit_mode = False
-    name=(st.session_state.extracted_info['first_name']+" "+st.session_state.extracted_info['second_name'])
-    address=(st.session_state.extracted_info['address']+" "+st.session_state.extracted_info['address2'])
-    # Get current date
-    current_date = date.today()
-    # Get current time
-    current_time = datetime.now().time()
-    print("Current Time:", current_time)
-    print("Current Date:", current_date)
+        # Edit mode
+        if st.session_state.edit_mode:
+            st.subheader("Edit Extracted Details")
 
-    birthday=extract_birthday(st.session_state.extracted_info['id'])
+            # Edit inputs persist and update session state directly
+            for key in st.session_state.extracted_info.keys():
+                st.session_state.extracted_info[key] = st.text_input(
+                    f"Edit {key.replace('_', ' ').title()}",
+                    value=st.session_state.extracted_info[key] or ""
+                )
 
-else:st.write("Please upload an image file")
+            # Save button
+            if st.button("Save Changes"):
+                st.success("Information updated successfully!")
+                for key, value in st.session_state.extracted_info.items():
+                    print(f"{key.replace('_', ' ').title()}: {value}")
+            # Cancel button
+            if st.button("Cancel"):
+                st.session_state.edit_mode = False
+        flag_goodimg=True
+        for i in st.session_state.extracted_info.values():
+            print(i)
+            if i is None:
+                flag_goodimg = False
+                st.write("من فضلك ارفع صوره واضح فيها كل البيانات")
+                break
+
+        print(st.session_state.extracted_info['second_name'])
+        # if flag_goodimg:
+        name = f"{st.session_state.extracted_info.get('first_name', '')} {st.session_state.extracted_info.get('second_name', '')}"
+        address = f"{st.session_state.extracted_info.get('address', '')} {st.session_state.extracted_info.get('address2', '')}"
+        # Get current date
+        current_date = date.today()
+        # Get current time
+        current_time = datetime.now().time()
+        print("Current Time:", current_time)
+        print("Current Date:", current_date)
+
+        if st.session_state.extracted_info['id'] is not None:
+            birthday=extract_birthday(st.session_state.extracted_info['id'])
+            st.write("Date of birth :"+birthday)  #Up
+        else:birthday="2000-01-01"
+        print("Date of birth :" + birthday)
+
+    else:st.write("من فضلك ارفع الصوره")
+except Exception as e:
+    print(str(e))
+    if  str(e)[:66] =="(403) Out of call volume quota for FormRecognizer F0 pricing tier." :
+        st.write("كل المحاولات انتهت . تواصل مع الدعم الفنى")
+        # print("Done")
+    else:
+        st.write("هناك خطأ ما .تواصل مع الدعم الفنى")
 # -------------------database
-
-dsn = cx_Oracle.makedsn(
-    host=st.secrets["api_credentials"]['host'],
-    port=st.secrets["api_credentials"]['port'],
-    service_name=st.secrets["api_credentials"]['sn']  # Replace with your service name
-)
 
 
 if st.button("Submit") and file_upload:
     try:
-        # Establish the connection
-        connection = cx_Oracle.connect(
+
+        connection = oracledb.connect(
             user=st.secrets["api_credentials"]['user'],
             password=st.secrets["api_credentials"]['pass'],
-            dsn=dsn
-        )
+            dsn=f'{st.secrets["api_credentials"]["host"]}/{st.secrets["api_credentials"]["sn"]}')
 
         print("Connected successfully!")
 
         # Create a cursor object
         cursor = connection.cursor()
 
-        # SQL query to create the table
-        create_table_query = """
-        CREATE TABLE Extracted_ID (
-            id NUMBER PRIMARY KEY,
-            name VARCHAR2(100),
-            address VARCHAR2(200),
-            date_column DATE,
-            stamp TIMESTAMP,
-            img BLOB,
-            mime_type VARCHAR2(100),        -- MIME type of the image (e.g., "image/jpeg")
-            last_update_img DATE,           -- Last update date of the record
-            created_by VARCHAR2(50),
-            type VARCHAR2(50)
-        )
-        """
-        sql_stat_old="""ALTER TABLE Extracted_ID
-        ADD P_id number"""
 
 
         # SQL statement to insert data
         sql_stat = """
         INSERT INTO Extracted_ID (
-            id,P_id,name, address, date_column, stamp, img, mime_type, last_update_img, created_by, type
-        )
-        VALUES (
-            extracted_id_seq.NEXTVAL,:1, :2, :3, :4, :5, :6, :7, :8, :9, :10
+            id, P_id, name, address, date_column, stamp, 
+            img, mime_type, last_update_img, created_by, type,factory_num
+        ) VALUES (
+            extracted_id_seq.NEXTVAL, :p_id, :name, :address, :date_column, :stamp, 
+            :img, :mime_type, :last_update_img, :created_by, :type ,:factory_num
         )
         """
-        # # SQL statement to create a sequence
-        # create_sequence_query = """
-        # CREATE SEQUENCE extracted_id_seq
-        #   START WITH 1
-        #   INCREMENT BY 1
-        #   NOCACHE
-        # """
-        #
-        # # Execute the query
-        # cursor.execute(create_sequence_query)
+
 
         # Print out all variables before insertion
-        st.write(f"Inserting data: {id}, {name}, {address}, {birthday}, {current_time}, {mime_type}, {current_date}")
+        print(f"Inserting data: {st.session_state.extracted_info['id']}, {name}, {address}, {birthday}, {current_time}, {mime_type}, {current_date} , {st.session_state.extracted_info['factory_num']}")
 
         # Explicitly handle potential None values
-        data = (
-            st.session_state.extracted_info['id'] or '',  # Provide default if None
-            name or '',
-            address or '',
-            datetime.strptime(birthday, "%Y-%m-%d"),
-            current_time,
-            img_bytes,
-            mime_type,
-            current_date,
-            " ",
-            selected_item
-        )
+        # data = (
+        #     st.session_state.extracted_info['id'] or '',  # Provide default if None
+        #     name or '',
+        #     address or '',
+        #     datetime.strptime(birthday, "%Y-%m-%d"),
+        #     current_time,
+        #     img_bytes,
+        #     mime_type,
+        #     current_date,
+        #     " ",
+        #     selected_item
+        # )
+        data = {
+            'p_id': st.session_state.extracted_info['id'] or '',
+            'name': name or '',
+            'address': address or '',
+            'date_column':  datetime.strptime(birthday, "%Y-%m-%d").date(),
+            'stamp': datetime.combine(current_date, current_time),  # Convert time to datetime
+            'img': img_bytes,
+            'mime_type': mime_type,
+            'last_update_img': current_date,
+            'created_by': ' ',
+            'type': selected_item,
+            'factory_num':st.session_state.extracted_info['factory_num']
+        }
         # Execute the query
         cursor.execute(sql_stat, data)
         # Execute the query
@@ -410,10 +443,16 @@ if st.button("Submit") and file_upload:
 
         # Commit the transaction
         connection.commit()
+        st.write("تم تسجيل البطاقه")
 
-
-    except cx_Oracle.DatabaseError as e:
-        st.write(f"Database error: {e}")
+    except oracledb.DatabaseError as e:
+        print(f"Database error: {e}")
+        print(str(e)[:28])
+        if str(e)[:28]=="ORA-00001: unique constraint":
+            st.write("هذه البطاقه مسجله سابقا")
+    except Exception as e:
+        print("error:",e)
+        st.write("هناك خطأ تواصل مع الدعم الفنى")
 
     finally:
         # Close the cursor and connection
