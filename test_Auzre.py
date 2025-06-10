@@ -1,5 +1,5 @@
 import streamlit as st
-import oracledb
+
 # Test if oracledb can be imported
 try:
     import oracledb
