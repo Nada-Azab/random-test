@@ -382,7 +382,7 @@ except Exception as e:
 
 if st.button("Submit") and file_upload:
     try:
-
+        oracledb.init_oracle_client(lib_dir=None)
         connection = oracledb.connect(
             user=st.secrets["api_credentials"]['user'],
             password=st.secrets["api_credentials"]['pass'],
