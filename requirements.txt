@@ -7,5 +7,5 @@ numpy~=2.0.2
 pandas==2.2.3
 streamlit==1.41.1
 oracledb==1.4.2
-python-3.10
+
 
