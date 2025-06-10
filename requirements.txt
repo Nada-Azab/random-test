@@ -6,5 +6,4 @@ GitPython==3.1.44
 numpy~=2.0.2
 pandas==2.2.3
 streamlit==1.41.1
-cx_Oracle==8.3.0
-oracledb
+oracledb==1.4.2
